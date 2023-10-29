@@ -5,7 +5,7 @@ import {onMounted} from "vue";
 
 const app = ref(null);
 
-const pageTitle = computed(()=> {
+const pageTitle = computed(() => {
     return `Customize ${app.value ? app.value.title : ''}`
 })
 
@@ -37,7 +37,6 @@ function updateFromHash() {
     const url = getParam(urlParams, 'url', PARAM_TYPES.STRING, '');
 
 
-
     if (url) {
         state.value = STATES.LOADING;
 
@@ -45,7 +44,7 @@ function updateFromHash() {
             app.value = res;
             state.value = STATES.LOADED;
             for (let field of app.value.fields) {
-                params.value[field.key] = field.default || '';
+                params.value[field.key] = field.default ?? '';
             }
 
         })
@@ -58,31 +57,34 @@ function updateFromHash() {
 
 const url = computed(() => {
 
-    let previewString = '';
+    let paramString = '';
 
     for (let field of app.value.fields) {
-        if (params.value[field.key]) {
-            previewString += `${field.key}=`
+        if (params.value[field.key] || field.type === 'boolean') {
+            // always show booleans even when false
+            paramString += `${field.key}=`
             switch (field.type) {
                 case 'text':
                 case 'select':
+                case 'number':
                 case 'date':
-                    previewString += encodeURIComponent(params.value[field.key])
+                case 'boolean':
+                    paramString += encodeURIComponent(params.value[field.key])
                     break;
                 case 'list':
-                    previewString += encodeURIComponent(params.value[field.key].join(","));
+                    paramString += encodeURIComponent(params.value[field.key].join(","));
                     break;
             }
-            previewString += '&';
+            paramString += '&';
         }
 
     }
 
-    if (previewString.slice(-1) === '&') {
-        previewString = previewString.substring(0, previewString.length - 1);
+    if (paramString.slice(-1) === '&') {
+        paramString = paramString.substring(0, paramString.length - 1);
     }
 
-    return `${app.value.preview_link}#${previewString}`;
+    return `${app.value.preview_link}#${paramString}`;
 })
 
 function fieldByKey(key) {
@@ -125,7 +127,6 @@ const errors = computed(() => {
     const fields = {};
 
 
-
     if (app.value) {
         for (let field of app.value.fields) {
             let requiredError = false;
@@ -135,8 +136,8 @@ const errors = computed(() => {
                 requiredError = true;
 
             }
-            if(field.type === 'date') {
-                if(!isValidDate(myValue)){
+            if (field.type === 'date') {
+                if (!isValidDate(myValue)) {
                     errors.push("Type the date in YYYY-MM-DD format");
                 }
 
@@ -152,10 +153,9 @@ const errors = computed(() => {
                         break;
                 }
             }
-            if(requiredError) {
+            if (requiredError) {
                 fields[field.key] = ['Required value'];
-            }
-            else if (errors.length > 0) {
+            } else if (errors.length > 0) {
                 fields[field.key] = errors;
             }
         }
@@ -189,7 +189,7 @@ function copyUrl() {
             <h2 class="text-2xl">Customize {{ app.title }}</h2>
             <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors && errors[field.key]}">
 
-                 <label :for="field.key">{{ field.label }}</label>
+                <label v-if="!['boolean'].includes(field.type)" :for="field.key">{{ field.label }}</label>
 
                 <div v-if="errors && errors[field.key]" class="text-red-500 text-sm">
                     <p v-for="error in errors[field.key]">
@@ -197,7 +197,7 @@ function copyUrl() {
                     </p>
                 </div>
 
-                <div v-if="['text','date'].includes(field.type)">
+                <div v-if="['text','date','number'].includes(field.type)">
 
                     <input class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 group-[.error]:outline-red"
                            v-model="params[field.key]" :type="field.type" :id="field.key">
@@ -219,6 +219,12 @@ function copyUrl() {
                               class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400"
                               :rows="field.rows || 5"></textarea>
                 </div>
+                <div v-if="field.type === 'boolean'">
+                    <label class="font-medium text-gray-900">
+                        <input v-model="params[field.key]" type="checkbox"
+                                                                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                        <span class="pl-2">{{ field.label }}</span></label>
+                </div>
                 <p class="text-sm text-gray-700 mt-1" v-if="field.description">{{ field.description }}</p>
 
 
@@ -229,14 +235,20 @@ function copyUrl() {
             <h2 class="text-2xl">Link</h2>
             <label for="url">URL</label>
             <div class="relative mt-2 rounded-md shadow-sm">
-                <input id="url" readonly class="block w-full rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" :value="url" type="text" @focus="$event.target.select()">
+                <input id="url" readonly
+                       class="block w-full rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                       :value="url" type="text" @focus="$event.target.select()">
                 <div class="absolute inset-y-0 right-0 flex items-center">
-                    <button class="h-full rounded-md rounded-l-none border-0 py-0 pl-2 pr-3 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600" @click="copyUrl">Copy</button>
+                    <button class="h-full rounded-md rounded-l-none border-0 py-0 pl-2 pr-3 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+                            @click="copyUrl">Copy
+                    </button>
                 </div>
 
             </div>
 
-            <p class="mt-2"><a class="text-blue-600"  :href="url" target="_blank">Preview <Icon name="ri:external-link-line"></Icon></a></p>
+            <p class="mt-2"><a class="text-blue-600" :href="url" target="_blank">Preview
+                <Icon name="ri:external-link-line"></Icon>
+            </a></p>
         </div>
 
 
