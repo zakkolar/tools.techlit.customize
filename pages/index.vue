@@ -66,6 +66,7 @@ const url = computed(() => {
             switch (field.type) {
                 case 'text':
                 case 'select':
+                case 'date':
                     previewString += encodeURIComponent(params.value[field.key])
                     break;
                 case 'list':
@@ -113,8 +114,6 @@ const isValidDate = date => {
     const [year, month, day] = matches.slice(1).map(item => parseInt(item));
     const composedDate = new Date(year, month - 1, day);
 
-    console.log(composedDate.getDate());
-
     return ((composedDate.getMonth() === month - 1) &&
         (composedDate.getDate() === day) &&
         (composedDate.getFullYear() === year));
@@ -130,21 +129,18 @@ const errors = computed(() => {
     if (app.value) {
         for (let field of app.value.fields) {
             let requiredError = false;
-
             const errors = [];
             const myValue = params.value[field.key];
             if (field.required && !params.value[field.key]) {
                 requiredError = true;
 
             }
-
             if(field.type === 'date') {
                 if(!isValidDate(myValue)){
                     errors.push("Type the date in YYYY-MM-DD format");
                 }
 
             }
-
             for (let validation of (field.validation || [])) {
                 switch (validation.type) {
                     case 'unique':
