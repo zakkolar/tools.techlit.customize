@@ -1,158 +1,160 @@
 <script setup>
 
-import {getParam, hashToParams, PARAM_TYPES} from "~/utils/UrlParams.js";
+import {getParam, hashToParams, PARAM_TYPES} from "@/utils/UrlParams.js";
 import {onMounted} from "vue";
+import {concatOr} from "@/utils/ConcatOr.js";
+import {isValidDate} from "@/utils/Validation.js";
+
+const STATES = Object.freeze({
+    LOADING: 'LOADING',
+    READY: 'READY',
+    LOADED: 'LOADED',
+    ERROR: 'ERROR'
+})
+
+const state = ref(null);
+const errorMessage = ref(null);
+
+function setState(newState, newErrorMessage = null) {
+    state.value = newState;
+    errorMessage.value = newErrorMessage;
+}
+
+setState(STATES.LOADING);
 
 const app = ref(null);
+const params = ref({});
 
 const pageTitle = computed(() => {
     return `Customize ${app.value ? app.value.title : ''}`
 })
-
 useHead({
     title: pageTitle
 })
-
-
-const params = ref({});
-
 
 onMounted(() => {
     window.addEventListener('hashchange', updateFromHash);
     updateFromHash();
 })
 
-const STATES = Object.freeze({
-    LOADING: 'LOADING',
-    READY: 'READY',
-    LOADED: 'LOADED'
-
-})
-
-const state = ref(STATES.LOADING);
+function setDefaults() {
+    for (let field of app.value.fields) {
+        params.value[field.key] = field.default ?? '';
+    }
+}
 
 function updateFromHash() {
-
     const urlParams = hashToParams();
     const url = getParam(urlParams, 'url', PARAM_TYPES.STRING, '');
 
-
     if (url) {
-        state.value = STATES.LOADING;
-
+        setState(STATES.LOADING);
         $fetch(url, {server: false}).then(res => {
             app.value = res;
-            state.value = STATES.LOADED;
-            for (let field of app.value.fields) {
-                params.value[field.key] = field.default ?? '';
+            setState(STATES.LOADED);
+            setDefaults();
+        }).catch(e => {
+            let error = e;
+            if(e.name === 'FetchError') {
+                e = `Could not fetch url ${url}`;
             }
-
+            setState(STATES.ERROR, e);
         })
     } else {
-        state.value = STATES.READY;
+        setState(STATES.READY);
     }
-
-
 }
 
-const url = computed(() => {
-
-    let paramString = '';
-
+/**
+ * Turns the parameters into a query string in the format key1=value1&key2=value2...
+ * @returns {string}
+ */
+function makeQueryString() {
+    let queryString = '';
     for (let field of app.value.fields) {
         if (params.value[field.key] || field.type === 'boolean') {
             // always show booleans even when false
-            paramString += `${field.key}=`
+            queryString += `${field.key}=`
             switch (field.type) {
                 case 'text':
                 case 'select':
                 case 'number':
                 case 'date':
                 case 'boolean':
-                    paramString += encodeURIComponent(params.value[field.key])
+                    queryString += encodeURIComponent(params.value[field.key])
                     break;
                 case 'list':
-                    paramString += encodeURIComponent(params.value[field.key].join(","));
+                    queryString += encodeURIComponent(params.value[field.key].join(","));
                     break;
             }
-            paramString += '&';
+            queryString += '&';
         }
 
     }
 
-    if (paramString.slice(-1) === '&') {
-        paramString = paramString.substring(0, paramString.length - 1);
+    if (queryString.slice(-1) === '&') {
+        queryString = queryString.substring(0, queryString.length - 1);
     }
 
-    return `${app.value.preview_link}#${paramString}`;
+    return queryString;
+}
+
+const url = computed(() => {
+    let params = '';
+
+    switch (app.value.format) {
+        case 'queryString':
+            params = makeQueryString();
+            break;
+    }
+
+    return `${app.value.preview_link}#${params}`;
 })
 
 function fieldByKey(key) {
     return app.value.fields.find(item => item.key === key);
 }
 
-function makeOr(list) {
-
-    if (!Array.isArray(list) || list.length === 0) {
-        throw new Error("Please provide a non-empty list")
+function checkForDate(field, errors) {
+    if (field.type === 'date') {
+        if (!isValidDate(params.value[field.key])) {
+            errors.push("Type the date in YYYY-MM-DD format");
+        }
     }
-
-    if (list.length === 1) {
-        return list[0];
-    }
-
-    if (list.length === 2) {
-        return list.join(" or ");
-    }
-
-    return list.slice(0, list.length - 1).join(", ") + ", or " + list.slice(-1);
 }
 
-const isValidDate = date => {
-    const IsoDateRe = new RegExp("^([0-9]{4})-([0-9]{2})-([0-9]{2})$");
-    const matches = date.match(IsoDateRe);
-    if (!matches) return false;
+function validateField(field, validation, errors) {
+    switch (validation.type) {
+        case 'unique':
+            validateUnique(validation, params.value[field.key], errors);
+            break;
+    }
+}
 
-    const [year, month, day] = matches.slice(1).map(item => parseInt(item));
-    const composedDate = new Date(year, month - 1, day);
-
-    return ((composedDate.getMonth() === month - 1) &&
-        (composedDate.getDate() === day) &&
-        (composedDate.getFullYear() === year));
-
+function validateUnique(validation, value, errors) {
+    const otherValues = validation.fields.map(item => params.value[item]);
+    const otherValueNames = validation.fields.map(item => fieldByKey(item).label);
+    if(otherValues.includes(value)) {
+        errors.push(`Should not have the same value as ${concatOr(otherValueNames)}`);
+    }
 }
 
 
 const errors = computed(() => {
     const fields = {};
 
-
     if (app.value) {
         for (let field of app.value.fields) {
-            let requiredError = false;
             const errors = [];
-            const myValue = params.value[field.key];
-            if (field.required && !params.value[field.key]) {
-                requiredError = true;
+            const requiredError = field.required && !params.value[field.key];
 
-            }
-            if (field.type === 'date') {
-                if (!isValidDate(myValue)) {
-                    errors.push("Type the date in YYYY-MM-DD format");
-                }
+            checkForDate(field, errors);
 
-            }
             for (let validation of (field.validation || [])) {
-                switch (validation.type) {
-                    case 'unique':
-                        const otherValues = validation.fields.map(item => params.value[item]);
-                        const otherValueNames = validation.fields.map(item => fieldByKey(item).label);
-                        if (otherValues.includes(myValue)) {
-                            errors.push(`Should not have the same value as ${makeOr(otherValueNames)}`);
-                        }
-                        break;
-                }
+                validateField(field, validation, errors);
             }
+
+            // Don't show a list of irrelevant errors if the field hasn't been filled in
             if (requiredError) {
                 fields[field.key] = ['Required value'];
             } else if (errors.length > 0) {
@@ -161,19 +163,22 @@ const errors = computed(() => {
         }
     }
 
-
-    if (Object.keys(fields).length === 0) {
-        return null;
-    }
-
     return fields;
 
+})
+
+const formValid = computed(() => {
+    return Object.keys(errors.value).length === 0
 })
 
 function copyUrl() {
     const field = document.getElementById('url');
     field.select();
     navigator.clipboard.writeText(url.value);
+}
+
+function select(e) {
+    e.target.select()
 }
 
 </script>
@@ -184,14 +189,17 @@ function copyUrl() {
     <div v-if="state === STATES.READY">
         Ready
     </div>
+    <div v-if="state === STATES.ERROR">
+        Error: {{errorMessage}}
+    </div>
     <div v-if="state === STATES.LOADED" class="grid grid-cols-2 gap-2">
         <form class="p-4">
             <h2 class="text-2xl">Customize {{ app.title }}</h2>
-            <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors && errors[field.key]}">
+            <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors[field.key]}">
 
                 <label v-if="!['boolean'].includes(field.type)" :for="field.key">{{ field.label }}</label>
 
-                <div v-if="errors && errors[field.key]" class="text-red-500 text-sm">
+                <div v-if="errors[field.key]" class="text-red-500 text-sm">
                     <p v-for="error in errors[field.key]">
                         {{ error }}
                     </p>
@@ -222,7 +230,7 @@ function copyUrl() {
                 <div v-if="field.type === 'boolean'">
                     <label class="font-medium text-gray-900">
                         <input v-model="params[field.key]" type="checkbox"
-                                                                    class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
                         <span class="pl-2">{{ field.label }}</span></label>
                 </div>
                 <p class="text-sm text-gray-700 mt-1" v-if="field.description">{{ field.description }}</p>
@@ -237,7 +245,7 @@ function copyUrl() {
             <div class="relative mt-2 rounded-md shadow-sm">
                 <input id="url" readonly
                        class="block w-full rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                       :value="url" type="text" @focus="$event.target.select()">
+                       :value="url" type="text" @focus="select">
                 <div class="absolute inset-y-0 right-0 flex items-center">
                     <button class="h-full rounded-md rounded-l-none border-0 py-0 pl-2 pr-3 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
                             @click="copyUrl">Copy
