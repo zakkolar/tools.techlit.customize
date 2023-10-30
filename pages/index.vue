@@ -214,10 +214,9 @@ function disableButton(type) {
     </div>
     <div v-if="state === STATES.LOADED">
         <h1 class="text-3xl mt-4 text-center">Customize {{ app.title }}</h1>
-
-        <nav class="mt-4 border-b">
+        <nav class="my-4 border-b sticky top-0 bg-white ">
             <button v-for="type of VIEWS"
-                    class="relative p-4 inline-block mr-2 disabled:text-gray-400"
+                    class="relative p-4 inline-block mr-2 disabled:text-gray-400 "
                     :disabled="disableButton(type)"
                     :title="disableButton(type) ? `Fix the errors in the form before previewing and sharing` : ``"
                     :class="{
@@ -230,6 +229,10 @@ function disableButton(type) {
         </nav>
 
         <form v-if="view === VIEWS.SETTINGS">
+              <p v-if="app.description">{{app.description}}</p>
+
+            <p class="mt-4 text-red-500" v-if="!formValid">Please correct the errors below before previewing and sharing.</p>
+
             <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors[field.key]}">
 
                 <label v-if="!['boolean'].includes(field.type)" :for="field.key">{{ field.label }}</label>
@@ -278,7 +281,7 @@ function disableButton(type) {
             <p class="my-4"><a class="text-blue-600" :href="url" target="_blank">Preview in a new window
                 <Icon name="ri:external-link-line"></Icon>
             </a></p>
-            <iframe :src="url" class="w-full border p-4 h-[500px]"></iframe>
+            <iframe :src="url" class="w-full border-4 h-[500px]"></iframe>
         </div>
 
         <div v-if="view === VIEWS.LINK">
