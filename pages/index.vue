@@ -11,7 +11,6 @@ const STATES = Object.freeze({
     LOADED: 'LOADED',
     ERROR: 'ERROR'
 })
-
 const state = ref(null);
 const errorMessage = ref(null);
 
@@ -21,6 +20,19 @@ function setState(newState, newErrorMessage = null) {
 }
 
 setState(STATES.LOADING);
+
+const VIEWS = Object.freeze({
+    SETTINGS: 'Settings',
+    PREVIEW: 'Preview',
+    LINK: 'Get link'
+})
+const view = ref(null);
+
+function setView(newView) {
+    view.value = newView;
+}
+
+setView(VIEWS.SETTINGS);
 
 const app = ref(null);
 const params = ref({});
@@ -55,7 +67,7 @@ function updateFromHash() {
             setDefaults();
         }).catch(e => {
             let error = e;
-            if(e.name === 'FetchError') {
+            if (e.name === 'FetchError') {
                 e = `Could not fetch url ${url}`;
             }
             setState(STATES.ERROR, e);
@@ -134,7 +146,7 @@ function validateField(field, validation, errors) {
 function validateUnique(validation, value, errors) {
     const otherValues = validation.fields.map(item => params.value[item]);
     const otherValueNames = validation.fields.map(item => fieldByKey(item).label);
-    if(otherValues.includes(value)) {
+    if (otherValues.includes(value)) {
         errors.push(`Should not have the same value as ${concatOr(otherValueNames)}`);
     }
 }
@@ -190,11 +202,24 @@ function select(e) {
         Ready
     </div>
     <div v-if="state === STATES.ERROR">
-        Error: {{errorMessage}}
+        Error: {{ errorMessage }}
     </div>
-    <div v-if="state === STATES.LOADED" class="grid grid-cols-2 gap-2">
-        <form class="p-4">
-            <h2 class="text-2xl">Customize {{ app.title }}</h2>
+    <div v-if="state === STATES.LOADED">
+        <h1 class="text-3xl mt-4 text-center">Customize {{ app.title }}</h1>
+
+        <nav class="mt-4 border-b">
+            <button v-for="type of VIEWS"
+                    class="relative p-4 inline-block mr-2"
+                    :class="{
+                        'border-b-4 border-blue-600 text-blue-600': type === view,
+                        '': type !== view
+                    }"
+                    @click="setView(type)"
+            >{{ type }}
+            </button>
+        </nav>
+
+        <form v-if="view === VIEWS.SETTINGS">
             <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors[field.key]}">
 
                 <label v-if="!['boolean'].includes(field.type)" :for="field.key">{{ field.label }}</label>
@@ -239,9 +264,16 @@ function select(e) {
             </div>
         </form>
 
-        <div class="border-l p-4">
-            <h2 class="text-2xl">Link</h2>
-            <label for="url">URL</label>
+        <div v-if="view === VIEWS.PREVIEW">
+            <p class="my-4"><a class="text-blue-600" :href="url" target="_blank">Preview in a new window
+                <Icon name="ri:external-link-line"></Icon>
+            </a></p>
+            <iframe :src="url" class="w-full border p-4 h-[500px]"></iframe>
+        </div>
+
+        <div v-if="view === VIEWS.LINK">
+            <p class="py-4">Copy and share this link to use "{{app.title}}" with your customizations.</p>
+            <label for="url" class="sr-only">URL</label>
             <div class="relative mt-2 rounded-md shadow-sm">
                 <input id="url" readonly
                        class="block w-full rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -253,10 +285,6 @@ function select(e) {
                 </div>
 
             </div>
-
-            <p class="mt-2"><a class="text-blue-600" :href="url" target="_blank">Preview
-                <Icon name="ri:external-link-line"></Icon>
-            </a></p>
         </div>
 
 
@@ -268,4 +296,5 @@ function select(e) {
 label {
     @apply block text-sm font-medium leading-6 text-gray-900;
 }
+
 </style>
