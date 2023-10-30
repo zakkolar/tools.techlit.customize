@@ -68,9 +68,9 @@ function updateFromHash() {
         }).catch(e => {
             let error = e;
             if (e.name === 'FetchError') {
-                e = `Could not fetch url ${url}`;
+                error = `Could not fetch url ${url}`;
             }
-            setState(STATES.ERROR, e);
+            setState(STATES.ERROR, error);
         })
     } else {
         setState(STATES.READY);
@@ -92,6 +92,7 @@ function makeQueryString() {
                 case 'select':
                 case 'number':
                 case 'date':
+                case 'hidden':
                 case 'boolean':
                     queryString += encodeURIComponent(params.value[field.key])
                     break;
