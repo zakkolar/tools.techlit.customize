@@ -196,6 +196,10 @@ function select(e) {
     e.target.select()
 }
 
+function disableButton(type) {
+    return (!formValid.value && (type === VIEWS.PREVIEW || type === VIEWS.LINK))
+}
+
 
 </script>
 <template>
@@ -213,10 +217,12 @@ function select(e) {
 
         <nav class="mt-4 border-b">
             <button v-for="type of VIEWS"
-                    class="relative p-4 inline-block mr-2"
+                    class="relative p-4 inline-block mr-2 disabled:text-gray-400"
+                    :disabled="disableButton(type)"
+                    :title="disableButton(type) ? `Fix the errors in the form before previewing and sharing` : ``"
                     :class="{
                         'border-b-4 border-blue-600 text-blue-600': type === view,
-                        '': type !== view
+                        'cursor-not-allowed': disableButton(type)
                     }"
                     @click="setView(type)"
             >{{ type }}
