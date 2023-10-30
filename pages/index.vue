@@ -183,15 +183,18 @@ const formValid = computed(() => {
     return Object.keys(errors.value).length === 0
 })
 
+const showCopy = ref(false);
+
 function copyUrl() {
-    const field = document.getElementById('url');
-    field.select();
     navigator.clipboard.writeText(url.value);
+    showCopy.value = true;
+    setTimeout(()=>showCopy.value = false, 1000);
 }
 
 function select(e) {
     e.target.select()
 }
+
 
 </script>
 <template>
@@ -279,12 +282,18 @@ function select(e) {
                        class="block w-full rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                        :value="url" type="text" @focus="select">
                 <div class="absolute inset-y-0 right-0 flex items-center">
-                    <button class="h-full rounded-md rounded-l-none border-0 py-0 pl-2 pr-3 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600"
+                    <button class="h-full rounded-md rounded-l-none border-0 py-0 pl-2 pr-3 bg-gray-200"
                             @click="copyUrl">Copy
                     </button>
+                    <Transition>
+                        <div v-if="showCopy" class="absolute text-sm bg-green-400 p-1 rounded left-[-50px] bottom-[4px]">
+                            Copied!
+                        </div>
+                    </Transition>
                 </div>
 
             </div>
+
         </div>
 
 
@@ -295,6 +304,16 @@ function select(e) {
 <style scoped>
 label {
     @apply block text-sm font-medium leading-6 text-gray-900;
+}
+
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
 }
 
 </style>
