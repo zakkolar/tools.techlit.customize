@@ -257,6 +257,8 @@ function clearManifest() {
         <form v-if="view === VIEWS.SETTINGS">
             <p v-if="app.description">{{ app.description }}</p>
 
+            <p v-if="!formValid" class="mt-4 text-red-700 inline-block bg-red-100 p-2 ">Please fix the errors below before previewing and sharing the link.</p>
+
             <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors[field.key]}">
 
                 <label v-if="!['boolean'].includes(field.type)" :for="field.key">{{ field.label }}</label>
