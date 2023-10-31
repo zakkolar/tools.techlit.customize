@@ -189,7 +189,7 @@ const showCopy = ref(false);
 function copyUrl() {
     navigator.clipboard.writeText(url.value);
     showCopy.value = true;
-    setTimeout(()=>showCopy.value = false, 1000);
+    setTimeout(() => showCopy.value = false, 1000);
 }
 
 function select(e) {
@@ -215,23 +215,27 @@ function disableButton(type) {
     <div v-if="state === STATES.LOADED">
         <h1 class="text-3xl mt-4 text-center">Customize {{ app.title }}</h1>
         <nav class="my-4 border-b sticky top-0 bg-white ">
-            <button v-for="type of VIEWS"
-                    class="relative p-4 inline-block mr-2 disabled:text-gray-400 "
-                    :disabled="disableButton(type)"
-                    :title="disableButton(type) ? `Fix the errors in the form before previewing and sharing` : ``"
-                    :class="{
+            <div v-for="type of VIEWS" class="group relative inline-block">
+                <button
+                        class="relative p-4 inline-block mr-2 disabled:text-gray-400 peer"
+                        :disabled="disableButton(type)"
+                        :class="{
                         'border-b-4 border-blue-600 text-blue-600': type === view,
                         'cursor-not-allowed': disableButton(type)
                     }"
-                    @click="setView(type)"
-            >{{ type }}
-            </button>
+                        @click="setView(type)"
+                >{{ type }}
+                </button>
+                <div v-if="disableButton(type)"
+                     class="text-xs max-w-[200px] absolute top-[40px] left-[-50%] bg-red-200 z-50 hidden peer-hover:block p-1 rounded text-red-800">
+                    Please fix the errors in the form
+                </div>
+            </div>
+
         </nav>
 
         <form v-if="view === VIEWS.SETTINGS">
-              <p v-if="app.description">{{app.description}}</p>
-
-            <p class="mt-4 text-red-500" v-if="!formValid">Please correct the errors below before previewing and sharing.</p>
+            <p v-if="app.description">{{ app.description }}</p>
 
             <div v-for="field of app.fields" class="mb-4 group" :class="{error: errors[field.key]}">
 
@@ -245,14 +249,14 @@ function disableButton(type) {
 
                 <div v-if="['text','date','number'].includes(field.type)">
 
-                    <input class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 group-[.error]:outline-red"
+                    <input class="block outline-none focus:ring-blue-500 w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-2 ring-inset ring-gray-300 placeholder:text-gray-400 group-[.error]:outline-red"
                            v-model="params[field.key]" :type="field.type" :id="field.key">
                 </div>
 
                 <div v-if="field.type === 'select'">
 
                     <select :id="field.key" v-model="params[field.key]"
-                            class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300">
+                            class="block outline-none focus:ring-blue-500 w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-2 ring-inset ring-gray-300">
                         <option v-if="!field.required"></option>
                         <option v-for="(option, key) of field.options" :value="key">{{ option }}</option>
                     </select>
@@ -262,13 +266,13 @@ function disableButton(type) {
                     <p class="text-sm">One item per line</p>
                     <textarea :id="field.key" @input="params[field.key] = $event.target.value.split('\n')"
                               :value="params[field.key].join('\n')"
-                              class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400"
+                              class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-2 focus:ring-blue-500 ring-inset ring-gray-300 placeholder:text-gray-400 outline-none "
                               :rows="field.rows || 5"></textarea>
                 </div>
                 <div v-if="field.type === 'boolean'">
                     <label class="font-medium text-gray-900">
                         <input v-model="params[field.key]" type="checkbox"
-                               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                               class="h-4 w-4 rounded border-gray-300 outline-none text-white bg-blue-500 focus:outline-blue-500">
                         <span class="pl-2">{{ field.label }}</span></label>
                 </div>
                 <p class="text-sm text-gray-700 mt-1" v-if="field.description">{{ field.description }}</p>
@@ -285,7 +289,7 @@ function disableButton(type) {
         </div>
 
         <div v-if="view === VIEWS.LINK">
-            <p class="py-4">Copy and share this link to use "{{app.title}}" with your customizations.</p>
+            <p class="py-4">Copy and share this link to use "{{ app.title }}" with your customizations.</p>
             <label for="url" class="sr-only">URL</label>
             <div class="relative mt-2 rounded-md shadow-sm">
                 <input id="url" readonly
@@ -296,7 +300,8 @@ function disableButton(type) {
                             @click="copyUrl">Copy
                     </button>
                     <Transition>
-                        <div v-if="showCopy" class="absolute text-sm bg-green-400 p-1 rounded left-[-50px] bottom-[4px]">
+                        <div v-if="showCopy"
+                             class="absolute text-sm bg-green-400 p-1 rounded left-[-50px] bottom-[4px]">
                             Copied!
                         </div>
                     </Transition>
@@ -318,12 +323,12 @@ label {
 
 .v-enter-active,
 .v-leave-active {
-  transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease;
 }
 
 .v-enter-from,
 .v-leave-to {
-  opacity: 0;
+    opacity: 0;
 }
 
 </style>
