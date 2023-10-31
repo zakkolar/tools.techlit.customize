@@ -305,7 +305,7 @@ function clearManifest() {
             <p class="my-4"><a class="text-blue-600" :href="url" target="_blank">Preview in a new window
                 <Icon name="ri:external-link-line"></Icon>
             </a></p>
-            <iframe :src="url" class="w-full border-4 h-[500px]"></iframe>
+            <iframe :src="url" class="w-full border shadow-md h-[500px]"></iframe>
         </div>
 
         <div v-if="view === VIEWS.LINK">
