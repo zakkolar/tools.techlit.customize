@@ -187,6 +187,7 @@ const formValid = computed(() => {
 const showCopy = ref(false);
 
 function copyUrl() {
+    document.getElementById('url').select();
     navigator.clipboard.writeText(url.value);
     showCopy.value = true;
     setTimeout(() => showCopy.value = false, 1000);
@@ -234,7 +235,7 @@ function clearManifest() {
     </div>
     <div v-if="state === STATES.LOADED">
         <h1 class="text-3xl mt-4 text-center">Customize {{ app.title }}</h1>
-        <nav class="my-4 border-b sticky top-0 bg-white ">
+        <nav class="my-4 border-b sticky top-0 bg-white max-w-screen-md mx-auto">
             <div v-for="type of VIEWS" class="group relative inline-block">
                 <button
                         class="relative p-4 inline-block mr-2 disabled:text-gray-400 peer"
@@ -247,14 +248,14 @@ function clearManifest() {
                 >{{ type }}
                 </button>
                 <div v-if="disableButton(type)"
-                     class="text-xs max-w-[200px] absolute top-[40px] left-[-50%] bg-red-200 z-50 hidden peer-hover:block p-1 rounded text-red-800">
+                     class="text-xs max-w-[200px] absolute top-[40px] left-[-50%] bg-red-100 z-50 hidden peer-hover:block p-1 rounded text-red-800">
                     Please fix the errors in the form
                 </div>
             </div>
 
         </nav>
 
-        <form v-if="view === VIEWS.SETTINGS">
+        <form v-if="view === VIEWS.SETTINGS" class="max-w-screen-md mx-auto">
             <p v-if="app.description">{{ app.description }}</p>
 
             <p v-if="!formValid" class="mt-4 text-red-700 inline-block bg-red-100 p-2 ">Please fix the errors below before previewing and sharing the link.</p>
@@ -310,15 +311,15 @@ function clearManifest() {
             <iframe :src="url" class="w-full border shadow-md h-[500px]"></iframe>
         </div>
 
-        <div v-if="view === VIEWS.LINK">
-            <p class="py-4">Copy and share this link to use "{{ app.title }}" with your customizations.</p>
+        <div v-if="view === VIEWS.LINK" class="max-w-screen-md mx-auto">
+            <p class="py-4">Copy and share this link to use "{{ app.title }}" with your settings.</p>
             <label for="url" class="sr-only">URL</label>
             <div class="relative mt-2 rounded-md shadow-sm">
                 <input id="url" readonly
-                       class="block w-full rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                       class="block w-full outline-none rounded-md border-0 py-1.5 pl-1.5 pr-18 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                        :value="url" type="text" @focus="select">
                 <div class="absolute inset-y-0 right-0 flex items-center">
-                    <button class="h-full rounded-md rounded-l-none border-0 py-0 pl-2 pr-3 bg-gray-200"
+                    <button class="h-full rounded-md rounded-l-none border-0 active:scale-105 transition-all py-0 pl-2 pr-3 bg-gray-200"
                             @click="copyUrl">Copy
                     </button>
                     <Transition>
