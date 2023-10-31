@@ -200,6 +200,19 @@ function disableButton(type) {
     return (!formValid.value && (type === VIEWS.PREVIEW || type === VIEWS.LINK))
 }
 
+function setManifest() {
+    const manifestUrl = document.getElementById('url')?.value;
+    if(manifestUrl) {
+        window.location.hash = `url=${manifestUrl}`;
+        updateFromHash();
+    }
+}
+
+function clearManifest() {
+    window.location.hash = '';
+    updateFromHash();
+}
+
 
 </script>
 <template>
@@ -207,10 +220,17 @@ function disableButton(type) {
         Loading...
     </div>
     <div v-if="state === STATES.READY">
-        Ready
+        <form @submit.prevent="setManifest">
+            <label for="url">Manifest URL</label>
+            <input id="url" value="https://zak.io" type="url" class="block outline-none focus:ring-blue-500 w-full rounded-md border-0 mb-4 mt-1 p-1.5 text-gray-900 shadow-sm ring-2 ring-inset ring-gray-300 placeholder:text-gray-400 ">
+            <button class="border p-1 rounded bg-gray-200">Load</button>
+        </form>
+
     </div>
     <div v-if="state === STATES.ERROR">
-        Error: {{ errorMessage }}
+        <h1 class="text-2xl">Error</h1>
+        <p class="my-4 ">{{ errorMessage }}</p>
+        <button class="border p-1 rounded bg-gray-200" @click="clearManifest">Try another</button>
     </div>
     <div v-if="state === STATES.LOADED">
         <h1 class="text-3xl mt-4 text-center">Customize {{ app.title }}</h1>
