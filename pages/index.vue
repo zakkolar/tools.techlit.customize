@@ -222,7 +222,7 @@ function clearManifest() {
     <div v-if="state === STATES.READY">
         <form @submit.prevent="setManifest">
             <label for="url">Manifest URL</label>
-            <input id="url" value="https://zak.io" type="url" class="block outline-none focus:ring-blue-500 w-full rounded-md border-0 mb-4 mt-1 p-1.5 text-gray-900 shadow-sm ring-2 ring-inset ring-gray-300 placeholder:text-gray-400 ">
+            <input id="url" placeholder="https://digitalfootprint.techlit.app/customize/anonymousEmail.json" type="url" class="block outline-none focus:ring-blue-500 w-full rounded-md border-0 mb-4 mt-1 p-1.5 text-gray-900 shadow-sm ring-2 ring-inset ring-gray-300 placeholder:text-gray-400 ">
             <button class="border p-1 rounded bg-gray-200">Load</button>
         </form>
 
