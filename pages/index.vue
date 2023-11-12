@@ -231,7 +231,7 @@ function clearManifest() {
     <div v-if="state === STATES.ERROR">
         <h1 class="text-2xl">Error</h1>
         <p class="my-4 ">{{ errorMessage }}</p>
-        <button class="border p-1 rounded bg-gray-200" @click="clearManifest">Try another</button>
+        <button class="border p-1 rounded bg-gray-200" @click="clearManifest">Try another URL</button>
     </div>
     <div v-if="state === STATES.LOADED">
         <h1 class="text-3xl mt-4 text-center">Customize {{ app.title }}</h1>
@@ -255,8 +255,10 @@ function clearManifest() {
 
         </nav>
 
-        <form v-if="view === VIEWS.SETTINGS" class="max-w-screen-md mx-auto">
+        <form v-if="view === VIEWS.SETTINGS" class="max-w-screen-md mx-auto leading-7">
             <p v-if="app.description">{{ app.description }}</p>
+
+            <p class="mt-2 mb-4">Use the form below to customize your settings. Then click "Share link" to copy and share the URL with your settings.</p>
 
             <p v-if="!formValid" class="mt-4 text-red-700 inline-block bg-red-100 p-2 ">Please fix the errors below before previewing and sharing the link.</p>
 
