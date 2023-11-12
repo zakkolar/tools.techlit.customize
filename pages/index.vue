@@ -24,7 +24,7 @@ setState(STATES.LOADING);
 const VIEWS = Object.freeze({
     SETTINGS: 'Settings',
     PREVIEW: 'Preview',
-    LINK: 'Get link'
+    LINK: 'Share link'
 })
 const view = ref(null);
 
